@@ -6,7 +6,7 @@ between tabs (eg: for each worksheet, the width of the arrow from any other
 worksheet depends on the number of cells of the first worksheet making use or
 calling the second one). Example:
 
-[[https://github.com/jabellcu/workbook_map/blob/master/Workbook_map_EXAMPLE.png|alt=Workbook_map_EXAMPLE.png]]
+![Alt text](workbook_map/Workbook_map_EXAMPLE.png?raw=true "Workbook_map_EXAMPLE.png")
 
 # Instructions
 
