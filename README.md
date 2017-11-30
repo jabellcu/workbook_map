@@ -4,7 +4,9 @@ This macro creates a map of the activeworkbook in the activesheet. This map is
 made of one box for each tab. Arrows between boxes indicate relationships
 between tabs (eg: for each worksheet, the width of the arrow from any other
 worksheet depends on the number of cells of the first worksheet making use or
-calling the second one.)
+calling the second one). Example:
+
+[[https://github.com/jabellcu/workbook_map/blob/master/Workbook_map_EXAMPLE.png|alt=Workbook_map_EXAMPLE.png]]
 
 # Instructions
 
