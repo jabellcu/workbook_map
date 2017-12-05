@@ -271,6 +271,8 @@ Private Sub insert_connector(ishp As Shape, fshp As Shape, Optional thickness As
     
     shp.Name = Name
     
+    shp.Placement = xlFreeFloating
+    
     shp.Line.EndArrowheadStyle = msoArrowheadTriangle
     
     iConnectPt = 4 'boxes' right side
