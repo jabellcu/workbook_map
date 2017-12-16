@@ -165,6 +165,29 @@ RGB(2) = nB
 ColourToRGB = RGB
 End Function
 
+Sub Select_Shapes()
+
+Dim i As Long, condition As Boolean
+Dim shp As Shape, ishp As Long
+Dim shpn_arr() As String
+
+For i = 0 To ActiveSheet.Shapes.Count - 1
+    ishp = i + 1
+    Set shp = ActiveSheet.Shapes(ishp)
+    
+    'condition = (shp.Connector = msoTrue) 'arrows
+    'condition = (shp.Connector = msoFalse) 'boxes
+    condition = (shp.Connector = msoFalse) _
+                 And (shp.Fill.ForeColor <> 15132390) 'Non-grey boxes
+    
+    If condition Then
+        ReDim Preserve shpn_arr(i)
+        shpn_arr(i) = shp.Name
+    End If
+Next
+ActiveSheet.Shapes.Range(shpn_arr).Select
+End Sub
+
 Sub AUX_clean_dependecy_arrows()
 ''AUX delete all connectors
 Dim shp As Shape
