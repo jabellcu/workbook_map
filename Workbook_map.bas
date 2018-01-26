@@ -12,7 +12,7 @@ End Sub
 
 Sub create_wb_map()
 Sheets_to_boxes
-add_dependency_arrows_to_boxes
+add_dependency_arrows_to_boxes 1
 End Sub
 
 Sub Sheets_to_boxes()
@@ -208,10 +208,11 @@ For Each shp In ActiveSheet.Shapes
 Next
 End Sub
 
-Private Sub add_dependency_arrows_to_boxes()
+Private Sub add_dependency_arrows_to_boxes(Optional max As Long = 0)
 '' Connects the boxes created by macro "Sheets_to_boxes", based on each tabs' formulae
 '' Provides a visualization of the workbook structure
 
+Dim i As Long
 Dim t As Integer, oldStatusBar
 Dim tshts
 Dim trng As Range
@@ -239,30 +240,36 @@ For Each sht In tshts
     If trng Is Nothing Then GoTo Next_fshp
     
     Set d = precedent_sheetnames_count(trng)
-    For Each ishpn In d
-        
-        If ishpn = sht.Name Then GoTo Next_ishp
-        Set ishp = ActiveSheet.Shapes(ishpn)
-        If ishp Is Nothing Then GoTo Next_ishp
-        
-        n = d(ishpn)
-        thickness = Log(n) + 0.25 'in vba log = ln
-        If thickness >= 1 Then insert_connector ishp, fshp, thickness
-        
-Next_ishp:
-        Set ishp = Nothing
-        
-    Next
     
-    'sht.Parent.Save
+    i = 0
+    If max = 0 Then max = d.Count 'max=0 means no max
+    Do While d.Count > 0 And i < max
+
+        For Each ishpn In dict_keys_with_max_values(d)
+            
+            If ishpn = sht.Name Then GoTo Next_ishp
+            Set ishp = ActiveSheet.Shapes(ishpn)
+            If ishp Is Nothing Then GoTo Next_ishp
+            
+            n = d(ishpn)
+            thickness = Log(n) + 0.25 'in vba log = ln
+            If thickness >= 1 Then insert_connector ishp, fshp, thickness
+            
+            i = i + 1
+            
+Next_ishp:
+            d.Remove ishpn
+            Set ishpn = Nothing
+            Set ishp = Nothing
+            
+        Next
+    Loop
     
 Next_fshp:
     Set d = Nothing
     Set sht = Nothing
     Set fshp = Nothing
     Set trng = Nothing
-    Set ishpn = Nothing
-    Set ishp = Nothing
     t = t + 1
 Next
 
@@ -386,17 +393,35 @@ RE.pattern = "'(.+?)'!|\b([^/\*-+ =&<>\[\]""\(\)]+)!"
 ''This approach is weak, but sufficient for this purpose
 
 RE.Global = True
-Set matches = RE.Execute(rng.Formula)
+Set matches = RE.execute(rng.Formula)
 
 For Each m In matches
     For Each sm In m.submatches
-        d(sm) = 1
+        If CStr(sm) <> "" Then d(sm) = 1
     Next
 Next
 
-precedent_sheetnames = d.keys()
+precedent_sheetnames = d.Keys()
 Set RE = Nothing
 Set d = Nothing
 End Function
 
+Private Function dict_keys_with_max_values(d) As Variant
+'Returns an array of dict keys whose values are the dict's maximum
 
+Dim i As Long
+Dim arr()
+Dim max As Long
+Dim key As Variant
+
+i = 0
+max = Application.max(d.items)
+For Each key In d.Keys
+    If d(key) = max Then
+        ReDim Preserve arr(i)
+        arr(i) = key
+        i = i + 1
+    End If
+Next key
+dict_keys_with_max_values = arr
+End Function
