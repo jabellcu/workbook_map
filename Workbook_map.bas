@@ -12,7 +12,7 @@ End Sub
 
 Sub create_wb_map()
 Sheets_to_boxes
-add_dependency_arrows_to_boxes 1
+add_dependency_arrows_to_boxes 2
 End Sub
 
 Sub Sheets_to_boxes()
@@ -120,7 +120,7 @@ Function insert_box(Optional txt As String = "TEXT", _
     End If
 
     With shp.TextFrame2.TextRange.Font
-        .Size = StrSize
+        .size = StrSize
         .Fill.ForeColor.RGB = txtColour
         If Bold Then .Bold = msoTrue
     End With
@@ -208,7 +208,10 @@ For Each shp In ActiveSheet.Shapes
 Next
 End Sub
 
-Private Sub add_dependency_arrows_to_boxes(Optional max As Long = 0)
+Private Sub add_dependency_arrows_to_boxes( _
+        Optional max As Long = 0, _
+        Optional thick As Double = 0, _
+        Optional always_connect_right_to_left As Boolean = False)
 '' Connects the boxes created by macro "Sheets_to_boxes", based on each tabs' formulae
 '' Provides a visualization of the workbook structure
 
@@ -252,8 +255,15 @@ For Each sht In tshts
             If ishp Is Nothing Then GoTo Next_ishp
             
             n = d(ishpn)
-            thickness = Log(n) + 0.25 'in vba log = ln
-            If thickness >= 1 Then insert_connector ishp, fshp, thickness
+            If thick > 0 Then
+                thickness = thick 'fixed thickness!
+                insert_connector ishp, fshp, thickness, always_connect_right_to_left
+            Else
+                thickness = Log(n) + 0.25 'in vba log = ln
+                If thickness >= 1 Then
+                    insert_connector ishp, fshp, thickness, always_connect_right_to_left
+                End If
+            End If
             
             i = i + 1
             
@@ -280,7 +290,9 @@ Application.DisplayStatusBar = oldStatusBar
 End Sub
 
 
-Private Sub insert_connector(ishp As Shape, fshp As Shape, Optional thickness As Double = 1)
+Private Sub insert_connector(ishp As Shape, fshp As Shape, _
+        Optional thickness As Double = 1, _
+        Optional always_connect_right_to_left As Boolean = False)
     
     Dim shp As Shape, Name As String
     Dim Colour As Long, RGBarr
@@ -308,7 +320,9 @@ Private Sub insert_connector(ishp As Shape, fshp As Shape, Optional thickness As
     iConnectPt = 4 'boxes' right side
     fConnectPt = 2 'boxes' left side
     
-    If ishp.Left + ishp.width > fshp.Left Then fConnectPt = 4
+    If Not always_connect_right_to_left Then
+        If ishp.Left > fshp.Left Then fConnectPt = 4
+    End If
     
     With shp.ConnectorFormat
         .BeginConnect ishp, iConnectPt
