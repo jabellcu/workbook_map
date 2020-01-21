@@ -240,7 +240,7 @@ Private Sub add_dependency_arrows_to_boxes( _
         Set trng = sht.Cells.SpecialCells(xlCellTypeFormulas)
         If trng Is Nothing Then GoTo Next_fshp
     
-        Set d = precedent_sheetnames_count(trng)
+        Set d = precedent_sheetnames_count(trng, 0, 0)  'no time cap, no sampling
     
         i = 0
         If max = 0 Then max = d.Count            'max=0 means no max
@@ -363,9 +363,14 @@ FinishThis:
     Set d = Nothing
 End Sub
 
-Private Function precedent_sheetnames_count(trng As Range)
+Private Function precedent_sheetnames_count(trng As Range, _
+                                            Optional max_time As Integer = 180, _
+                                            Optional sample_every As Integer = 10)
     ''Returns a dictionary of {sheet_name: count_cells_using_sheet_name}
-    ''of the sheets used in rng's formulas.
+    ''of the sheets used in rng's formulas. max_time and sample_every can be
+    ''used to limit the time spent counting precedents:
+    '' max_time: maximum total time spent
+    '' sample_every: sampling on trng (e.g. 1 out of every 10 cells)
 
     Dim rng As Range
     Dim shtns, shtn
@@ -375,11 +380,23 @@ Private Function precedent_sheetnames_count(trng As Range)
     On Error GoTo FinishThis
     Set trng = trng.Cells.SpecialCells(xlCellTypeFormulas)
 
-    For Each rng In trng
-        shtns = precedent_sheetnames(rng)
-        For Each shtn In shtns
-            d(shtn) = d(shtn) + 1
-        Next
+    Dim Start As Double, Duration As Double
+    Start = Timer
+
+    Dim i As Long
+    For i = 1 To trng.Cells.Count
+        If (sample_every = 0) Or ((i Mod sample_every) = 0) Then
+            Set rng = trng.Cells(i)
+            Duration = Timer - Start
+            If (max_time = 0) Or (Duration < max_time) Then
+                shtns = precedent_sheetnames(rng)
+                For Each shtn In shtns
+                    d(shtn) = d(shtn) + 1
+                Next
+            Else
+                Exit For
+            End If
+        End If
     Next
 
     Set precedent_sheetnames_count = d
