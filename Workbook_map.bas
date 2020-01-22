@@ -186,6 +186,23 @@ Sub Select_Shapes()
     ActiveSheet.Shapes.Range(shpn_arr).Select
 End Sub
 
+Sub linkfy_boxes()
+
+    Dim shp As Shape, txt As String
+
+    For Each shp In ActiveSheet.Shapes
+    
+        If Not (shp.Connector = msoFalse) Then GoTo NextIteration
+        txt = shp.TextFrame2.TextRange.Characters.Text
+        ActiveSheet.Hyperlinks.Add Anchor:=shp, _
+                                   Address:="", _
+                                   SubAddress:="'" & txt & "'!A1"
+
+NextIteration:
+    Next
+
+End Sub
+
 Sub AUX_clean_dependecy_arrows()
     ''AUX delete all connectors
     Dim shp As Shape
@@ -240,7 +257,8 @@ Private Sub add_dependency_arrows_to_boxes( _
         Set trng = sht.Cells.SpecialCells(xlCellTypeFormulas)
         If trng Is Nothing Then GoTo Next_fshp
     
-        Set d = precedent_sheetnames_count(trng, 0, 0)  'no time cap, no sampling
+        Set d = precedent_sheetnames_count(trng, max_time, sample_every)  'no time cap, no sampling
+        If d Is Nothing Then GoTo Next_fshp
     
         i = 0
         If max = 0 Then max = d.Count            'max=0 means no max
@@ -376,27 +394,26 @@ Private Function precedent_sheetnames_count(trng As Range, _
     Dim shtns, shtn
     Dim d As Object
     Set d = CreateObject("Scripting.Dictionary")
-
+    
     On Error GoTo FinishThis
-    Set trng = trng.Cells.SpecialCells(xlCellTypeFormulas)
 
     Dim Start As Double, Duration As Double
     Start = Timer
 
     Dim i As Long
     For i = 1 To trng.Cells.Count
-        If (sample_every = 0) Or ((i Mod sample_every) = 0) Then
-            Set rng = trng.Cells(i)
-            Duration = Timer - Start
-            If (max_time = 0) Or (Duration < max_time) Then
-                shtns = precedent_sheetnames(rng)
-                For Each shtn In shtns
-                    d(shtn) = d(shtn) + 1
-                Next
-            Else
-                Exit For
-            End If
+        If (sample_every > 0) Then If ((i Mod sample_every) <> 1) Then GoTo NextIteration
+        Set rng = trng.Cells(i)
+        Duration = Timer - Start
+        If (max_time = 0) Or (Duration < max_time) Then
+            shtns = precedent_sheetnames(rng)
+            For Each shtn In shtns
+                d(shtn) = d(shtn) + 1
+            Next
+        Else
+            Exit For
         End If
+NextIteration:
     Next
 
     Set precedent_sheetnames_count = d
@@ -430,6 +447,55 @@ Private Function precedent_sheetnames(rng As Range) As Variant
     Set RE = Nothing
     Set d = Nothing
 End Function
+
+Private Function precedent_sheetnames_unreliable_alternative(rng As Range) As Variant
+    'This version explores the use of .ShowPrecedents, but it is slow and unreliable
+    'LEFT HERE AS A WARNING. DO NOT USE.
+    'Returns an array with the unique names of all the sheets used in rng.Formula
+    
+    Dim d As Object
+    Set d = CreateObject("Scripting.Dictionary")
+    
+    Dim xarrow As Long, xlink As Long, prng As Range
+    
+    rng.ShowPrecedents
+    ActiveWindow.SmallScroll
+    Application.WindowState = Application.WindowState
+    On Error Resume Next
+    xarrow = 1
+    Do
+        xlink = 1
+        Do
+            Set prng = Nothing
+            Set prng = Selection.NavigateArrow(True, xarrow, xlink)
+            ' Go back to input range
+            rng.Parent.Select
+            rng.Select
+            If (prng Is Nothing) _
+                Or ((prng.Parent.Name = rng.Parent.Name) _
+                    And (prng.Address = rng.Address)) Then
+                Exit Do
+            End If
+            ' Avoid internal precedents
+            If Not prng.Parent.Name = rng.Parent.Name Then d(prng.Parent.Name) = 1
+            xlink = xlink + 1
+        Loop
+        If Not prng Is Nothing Then
+            If ((prng.Parent.Name = rng.Parent.Name) _
+                And (prng.Address = rng.Address)) Then
+                Exit Do
+            End If
+        End If
+        xarrow = xarrow + 1
+    Loop
+    On Error GoTo 0
+    rng.Parent.ClearArrows
+
+    precedent_sheetnames = d.Keys()
+    Set d = Nothing
+    
+End Function
+
 
 Private Function dict_keys_with_max_values(d) As Variant
     'Returns an array of dict keys whose values are the dict's maximum
