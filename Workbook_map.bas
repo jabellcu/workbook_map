@@ -517,3 +517,46 @@ Private Function dict_keys_with_max_values(d) As Variant
     dict_keys_with_max_values = arr
 End Function
 
+
+Sub output_formulae()
+
+    Dim dfile As Integer
+    Dim dfilep As String
+    Dim wpath As String
+    
+    dfile = FreeFile ''Assigns the next free file number
+    wpath = ActiveWorkbook.path & "\"
+    dfilep = wpath & Left(ActiveWorkbook.Name, (InStrRev(ActiveWorkbook.Name, ".", -1, vbTextCompare) - 1)) & "_formulas.tsv"
+    
+    ''Delete the file if it exists:
+    If Len(Dir$(dfilep)) > 1 Then
+        SetAttr dfilep, vbNormal
+        Kill dfilep
+    End If
+    
+    ''Open the file for appending
+    Open dfilep For Append As #dfile
+    
+    Dim sht As Worksheet, rng As Range, trng As Range
+    Dim rowtxt As String
+    Const sep = vbTab
+    
+    rowtxt = """sheet_name""" & sep & """cell_address""" & sep & """cell_formula"""
+    Print #dfile, rowtxt
+    
+    For Each sht In ActiveWorkbook.Worksheets
+        On Error Resume Next
+        Set trng = sht.Cells.SpecialCells(xlCellTypeFormulas)
+        On Error GoTo 0
+        If Not trng Is Nothing Then
+            For Each rng In trng
+                rowtxt = Join(Array("""" & sht.Name & """", """" & rng.Address(False, False) & """", """'" & rng.Formula & """"), sep)
+                Print #dfile, rowtxt
+            Next
+        End If
+        Set trng = Nothing
+    Next
+    
+    Close #dfile
+    
+End Sub
