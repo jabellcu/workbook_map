@@ -560,3 +560,42 @@ Sub output_formulae()
     Close #dfile
     
 End Sub
+
+
+Sub output_names()
+
+    Dim dfile As Integer
+    Dim dfilep As String
+    Dim wpath As String
+    
+    dfile = FreeFile ''Assigns the next free file number
+    wpath = ActiveWorkbook.path & "\"
+    dfilep = wpath & Left(ActiveWorkbook.name, (InStrRev(ActiveWorkbook.name, ".", -1, vbTextCompare) - 1)) & "_names.tsv"
+    
+    ''Delete the file if it exists:
+    If Len(Dir$(dfilep)) > 1 Then
+        SetAttr dfilep, vbNormal
+        Kill dfilep
+    End If
+    
+    ''Open the file for appending
+    Open dfilep For Append As #dfile
+    
+    Dim rowtxt As String
+    Const sep = vbTab
+    
+    rowtxt = """name""" & sep & """range"""
+    Print #dfile, rowtxt
+    
+    Dim name As name
+    
+    For Each name In ActiveWorkbook.Names
+        rowtxt = Join(Array("""" & name.name & """", """'" & name.RefersTo & """"), sep)
+        Print #dfile, rowtxt
+    Next
+    
+    Set name = Nothing
+    Close #dfile
+    
+End Sub
+
