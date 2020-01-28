@@ -51,7 +51,7 @@ Sub Sheets_to_boxes()
 
     For Each xsht In ActiveWorkbook.Sheets
     
-        Application.StatusBar = n & "/" & ActiveWorkbook.Sheets.Count & "   " & xsht.Name
+        Application.StatusBar = n & "/" & ActiveWorkbook.Sheets.Count & "   " & xsht.name
     
         Colour = xsht.Tab.color
         'TODO: Fix default Colour
@@ -70,7 +70,7 @@ Sub Sheets_to_boxes()
     
         t = (Cells(1, 1).Height * 4.5) + (TxtSize * 2 + TxtSize) * i
 
-        boxw = insert_box(xsht.Name, l, t, _
+        boxw = insert_box(xsht.name, l, t, _
                           Colour:=Colour, _
                           TintAndShade:=xsht.Tab.TintAndShade)
                         
@@ -109,7 +109,7 @@ Function insert_box(Optional txt As String = "TEXT", _
 
     Set shp = ActiveSheet.Shapes.AddShape(msoShapeRectangle, Left, Top, w, h)
     
-    shp.Name = txt                               'This allows easy identification later (AVOID DUPS)
+    shp.name = txt                               'This allows easy identification later (AVOID DUPS)
     ActiveSheet.Hyperlinks.Add Anchor:=shp, _
                                Address:="", _
                                SubAddress:="'" & txt & "'!A1"
@@ -326,9 +326,9 @@ Private Sub add_dependency_arrows_to_boxes( _
     For Each sht In tshts
     
         'Debug.Print sht.Name
-        Application.StatusBar = t & "/" & tshts.Count & "   " & sht.Name
+        Application.StatusBar = t & "/" & tshts.Count & "   " & sht.name
     
-        Set fshp = ActiveSheet.Shapes(sht.Name)
+        Set fshp = ActiveSheet.Shapes(sht.name)
         If fshp Is Nothing Then GoTo Next_fshp
         Set trng = sht.Cells.SpecialCells(xlCellTypeFormulas)
         If trng Is Nothing Then GoTo Next_fshp
@@ -356,7 +356,7 @@ Private Sub add_dependency_arrows_to_boxes( _
 
             For Each ishpn In dict_keys_with_max_values(d)
             
-                If ishpn = sht.Name Then GoTo Next_ishp
+                If ishpn = sht.name Then GoTo Next_ishp
                 Set ishp = ActiveSheet.Shapes(ishpn)
                 If ishp Is Nothing Then GoTo Next_ishp
             
@@ -399,7 +399,7 @@ Private Sub insert_connector(ishp As Shape, fshp As Shape, _
                              Optional thickness As Double = 1, _
                              Optional always_connect_right_to_left As Boolean = False)
     
-    Dim shp As Shape, Name As String
+    Dim shp As Shape, name As String
     Dim Colour As Long, RGBarr
     Dim iConnectPt As Integer, fConnectPt As Integer
     
@@ -409,14 +409,14 @@ Private Sub insert_connector(ishp As Shape, fshp As Shape, _
     Const w = 10
     Const h = 10
     
-    Name = ishp.Name & " to " & fshp.Name
-    If shape_exists(Name) Then Exit Sub          'do not overwrite
+    name = ishp.name & " to " & fshp.name
+    If shape_exists(name) Then Exit Sub          'do not overwrite
     
     'Set shp = ActiveSheet.Shapes.AddConnector(msoConnectorStraight, l, t, w, h) 'straight
     'Set shp = ActiveSheet.Shapes.AddConnector(msoConnectorElbow, l, t, w, h) ' elbows
     Set shp = ActiveSheet.Shapes.AddConnector(msoConnectorCurve, l, t, w, h) 'straight
     
-    shp.Name = Name
+    shp.name = name
     
     shp.Placement = xlFreeFloating
     
@@ -450,11 +450,11 @@ Private Sub insert_connector(ishp As Shape, fshp As Shape, _
     
 End Sub
 
-Private Function shape_exists(Name As String)
+Private Function shape_exists(name As String)
     ''Reyurns True if a shape exists, False otherwise
     Dim shp As Shape
     On Error Resume Next
-    Set shp = ActiveSheet.Shapes(Name)
+    Set shp = ActiveSheet.Shapes(name)
     shape_exists = Not shp Is Nothing
 End Function
 
@@ -484,7 +484,7 @@ Private Function precedent_sheetnames_count(trng As Range, _
     Dim shtns, shtn
     Dim d As Object
     Set d = CreateObject("Scripting.Dictionary")
-    
+
     On Error GoTo FinishThis
 
     Dim Start As Double, Duration As Double
@@ -562,16 +562,16 @@ Private Function precedent_sheetnames_unreliable_alternative(rng As Range) As Va
             rng.Parent.Select
             rng.Select
             If (prng Is Nothing) _
-                Or ((prng.Parent.Name = rng.Parent.Name) _
+                Or ((prng.Parent.name = rng.Parent.name) _
                     And (prng.Address = rng.Address)) Then
                 Exit Do
             End If
             ' Avoid internal precedents
-            If Not prng.Parent.Name = rng.Parent.Name Then d(prng.Parent.Name) = 1
+            If Not prng.Parent.name = rng.Parent.name Then d(prng.Parent.name) = 1
             xlink = xlink + 1
         Loop
         If Not prng Is Nothing Then
-            If ((prng.Parent.Name = rng.Parent.Name) _
+            If ((prng.Parent.name = rng.Parent.name) _
                 And (prng.Address = rng.Address)) Then
                 Exit Do
             End If
@@ -616,7 +616,7 @@ Sub output_formulae()
     
     dfile = FreeFile ''Assigns the next free file number
     wpath = ActiveWorkbook.path & "\"
-    dfilep = wpath & Left(ActiveWorkbook.Name, (InStrRev(ActiveWorkbook.Name, ".", -1, vbTextCompare) - 1)) & "_formulas.tsv"
+    dfilep = wpath & Left(ActiveWorkbook.name, (InStrRev(ActiveWorkbook.name, ".", -1, vbTextCompare) - 1)) & "_formulas.tsv"
     
     ''Delete the file if it exists:
     If Len(Dir$(dfilep)) > 1 Then
@@ -640,7 +640,7 @@ Sub output_formulae()
         On Error GoTo 0
         If Not trng Is Nothing Then
             For Each rng In trng
-                rowtxt = Join(Array("""" & sht.Name & """", """" & rng.Address(False, False) & """", """'" & rng.Formula & """"), sep)
+                rowtxt = Join(Array("""" & sht.name & """", """" & rng.Address(False, False) & """", """'" & rng.Formula & """"), sep)
                 Print #dfile, rowtxt
             Next
         End If
