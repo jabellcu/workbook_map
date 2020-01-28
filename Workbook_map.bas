@@ -24,7 +24,7 @@ Sub create_wb_map()
     ''     "Workbook_map_EXAMPLE_formulas_count.csv"
     '' Then use the following line of code instead of the previous one:
     
-    'add_dependency_arrows_to_boxes precedents_filepath:="Workbook_map_EXAMPLE_formulas_count.csv"
+    'add_dependency_arrows_to_boxes precedents_filepath:=Activeworkbook.Path & "\" & "Workbook_map_EXAMPLE_formulae_count.csv"
     
 End Sub
 
