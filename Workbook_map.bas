@@ -188,12 +188,14 @@ Sub Select_Shapes()
     
         'condition = (shp.Connector = msoTrue) 'arrows
         'condition = (shp.Connector = msoFalse) 'boxes
-        condition = (shp.Connector = msoFalse) _
-        And (shp.Fill.ForeColor <> 15132390)     'Non-grey boxes
+        'condition = (shp.Connector = msoFalse) And (shp.Fill.ForeColor <> 15132390) 'Non-grey boxes
+        'condition = (shp.Connector = msoFalse) And (shp.Fill.ForeColor = 192)
+        condition = (shp.Connector = msoFalse) And (shp.Left > 900)
+        'condition = (shp.Connector = msoTrue) And (shp.Name Like "*Control*")
     
         If condition Then
             ReDim Preserve shpn_arr(i)
-            shpn_arr(i) = shp.Name
+            shpn_arr(i) = shp.name
         End If
     Next
     ActiveSheet.Shapes.Range(shpn_arr).Select
@@ -227,12 +229,23 @@ End Sub
 Sub AUX_change_dependecy_arrows()
     ''AUX Apply a change to all connectors
     Dim shp As Shape
-    For Each shp In ActiveSheet.Shapes
+    'For Each shp In ActiveSheet.Shapes
+    For Each shp In Selection.ShapeRange
         If shp.Connector = msoTrue Then
             'shp.ConnectorFormat.Type = msoConnectorStraight
-            shp.ConnectorFormat.Type = msoConnectorCurve
-            'shp.ConnectorFormat.Type = msoConnectorElbow
+            'shp.ConnectorFormat.Type = msoConnectorCurve
+            shp.ConnectorFormat.Type = msoConnectorElbow
+        
+            'shp.Line.Weight = 3
+        
+            'shp.Adjustments.Item(1) = 0.5
+        
         End If
+   
+        'shp.Top = shp.Top + 30 * 1
+        'shp.Top = 548
+        'shp.Left = shp.Left - 50
+   
     Next
 End Sub
 
@@ -688,4 +701,3 @@ Sub output_names()
     Close #dfile
     
 End Sub
-
