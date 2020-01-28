@@ -2,7 +2,7 @@ Attribute VB_Name = "Workbook_map"
 Option Explicit
 
 Sub AUX_clean_shapes()
-    ''AUX delete all shapes
+    '' AUX delete all shapes
     Dim shp As Shape
     For Each shp In ActiveSheet.Shapes
         shp.Delete
@@ -24,7 +24,7 @@ Sub create_wb_map()
     ''     "Workbook_map_EXAMPLE_formulas_count.csv"
     '' Then use the following line of code instead of the previous one:
     
-    'add_dependency_arrows_to_boxes precedents_file:="Workbook_map_EXAMPLE_formulas_count.csv"
+    'add_dependency_arrows_to_boxes precedents_filepath:="Workbook_map_EXAMPLE_formulas_count.csv"
     
 End Sub
 
@@ -242,7 +242,8 @@ Private Sub add_dependency_arrows_to_boxes( _
         Optional always_connect_right_to_left As Boolean = False, _
         Optional max_time As Integer = 0, _
         Optional sample_every As Integer = 0, _
-        Optional precedents_file As String = "")
+        Optional precedents_filepath As String = "", _
+        Optional precedents_filepath_sep As String = ",")
     '' Connects the boxes created by macro "Sheets_to_boxes", based on each tabs' formulae
     '' Provides a visualization of the relationships between sheets.
     '' Assumes the active sheet contains a box shape for each sheet to be linked,
@@ -264,7 +265,7 @@ Private Sub add_dependency_arrows_to_boxes( _
     ''    done on a sample of the cells only. This is used to limit the calculation
     ''    time spent on each sheet.
     ''
-    ''  - precedents_file: if specified, the calculation of the references (links)
+    ''  - precedents_filepath: if specified, the calculation of the references (links)
     ''    between sheets is overriden, and taken from the file path specified. The
     ''    input file must be a CSV file with three columns:
     ''
@@ -277,6 +278,8 @@ Private Sub add_dependency_arrows_to_boxes( _
     ''      1) Run output_formulae (in this module) on the target workbook;
     ''      2) Run output_names (in this module) on the target workbook; and
     ''      3) Run process_formulas.ipynb (jupyter notebook - requires python 3.7+).
+    ''
+    ''  - precedents_filepath_sep: sparator used in precedents_filepath
 
     Dim i As Long
     Dim t As Integer, oldStatusBar
@@ -286,6 +289,9 @@ Private Sub add_dependency_arrows_to_boxes( _
     Dim sht As Worksheet
     Dim ishpn, n As Long, thickness As Double
     Dim d As Object, x
+    Dim iFileNum As Integer, ifileLine As String, iFileRowNum As Integer
+    Dim iFileArr() As String
+    Dim shtn As String, precedent_shtn As String, ref_count As Long
 
     t = 1
     oldStatusBar = Application.DisplayStatusBar
@@ -293,6 +299,28 @@ Private Sub add_dependency_arrows_to_boxes( _
 
     Set tshts = ActiveWorkbook.Worksheets
     'Set tshts = ActiveWindow.SelectedSheets
+    
+    If precedents_filepath <> "" Then
+    
+        ' Read the input file
+        iFileNum = FreeFile
+        Open precedents_filepath For Input As #iFileNum
+        iFileRowNum = 1
+            
+        Do Until EOF(iFileNum)
+            Line Input #iFileNum, ifileLine
+            ReDim Preserve iFileArr(1 To 3, 1 To iFileRowNum)
+            i = 1
+            For Each x In Split(ifileLine, precedents_filepath_sep)
+                iFileArr(i, iFileRowNum) = x
+                i = i + 1
+            Next x
+            iFileRowNum = iFileRowNum + 1
+        Loop
+        
+        Close #iFileNum
+        
+    End If
 
     On Error Resume Next
     For Each sht In tshts
@@ -304,8 +332,22 @@ Private Sub add_dependency_arrows_to_boxes( _
         If fshp Is Nothing Then GoTo Next_fshp
         Set trng = sht.Cells.SpecialCells(xlCellTypeFormulas)
         If trng Is Nothing Then GoTo Next_fshp
-    
-        Set d = precedent_sheetnames_count(trng, max_time, sample_every)  'no time cap, no sampling
+        
+        If precedents_filepath <> "" Then
+            'Create the reference count dictionary from the input file
+            Set d = CreateObject("Scripting.Dictionary")
+            For i = 1 To UBound(iFileArr, 2)
+                
+                shtn = iFileArr(1, i)
+                precedent_shtn = iFileArr(2, i)
+                ref_count = CInt(iFileArr(3, i))
+                
+                If sht.name = shtn Then d(precedent_shtn) = ref_count
+            Next
+        Else
+            'Calculate the reference count dictionary
+            Set d = precedent_sheetnames_count(trng, max_time, sample_every)
+        End If
         If d Is Nothing Then GoTo Next_fshp
     
         i = 0
