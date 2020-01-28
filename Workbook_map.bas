@@ -629,7 +629,7 @@ Sub output_formulae()
     
     dfile = FreeFile ''Assigns the next free file number
     wpath = ActiveWorkbook.path & "\"
-    dfilep = wpath & Left(ActiveWorkbook.name, (InStrRev(ActiveWorkbook.name, ".", -1, vbTextCompare) - 1)) & "_formulas.tsv"
+    dfilep = wpath & Left(ActiveWorkbook.name, (InStrRev(ActiveWorkbook.name, ".", -1, vbTextCompare) - 1)) & "_formulae.tsv"
     
     ''Delete the file if it exists:
     If Len(Dir$(dfilep)) > 1 Then
