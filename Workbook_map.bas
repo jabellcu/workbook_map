@@ -11,8 +11,21 @@ Sub AUX_clean_shapes()
 End Sub
 
 Sub create_wb_map()
+    
     Sheets_to_boxes
-    add_dependency_arrows_to_boxes 2
+    add_dependency_arrows_to_boxes
+    
+    '' Alternative for faster calculation of links between sheets (relevant for
+    '' larger workbooks):
+    ''  1) Run output_formulae (in this module) on the target workbook;
+    ''  2) Run output_names (in this module) on the target workbook;
+    ''  3) Run process_formulas.ipynb (jupyter notebook - requires python 3.7+).
+    ''     Ammend names and paths as necessary. This will produce the file:
+    ''     "Workbook_map_EXAMPLE_formulas_count.csv"
+    '' Then use the following line of code instead of the previous one:
+    
+    'add_dependency_arrows_to_boxes precedents_file:="Workbook_map_EXAMPLE_formulas_count.csv"
+    
 End Sub
 
 Sub Sheets_to_boxes()
@@ -226,9 +239,44 @@ End Sub
 Private Sub add_dependency_arrows_to_boxes( _
         Optional max As Long = 0, _
         Optional thick As Double = 0, _
-        Optional always_connect_right_to_left As Boolean = False)
+        Optional always_connect_right_to_left As Boolean = False, _
+        Optional max_time As Integer = 0, _
+        Optional sample_every As Integer = 0, _
+        Optional precedents_file As String = "")
     '' Connects the boxes created by macro "Sheets_to_boxes", based on each tabs' formulae
-    '' Provides a visualization of the workbook structure
+    '' Provides a visualization of the relationships between sheets.
+    '' Assumes the active sheet contains a box shape for each sheet to be linked,
+    '' and that the box's shape.name is the sheet name for the connectors to be
+    '' created. Optional arguments:
+    ''
+    ''  - max: controls the maximum number of connectors per box to avoid clutter.
+    ''
+    ''  - thick: use a constant thinkness for the connectors. If 0 (default) then the
+    ''    thinkess is based on the number of references between sheets.
+    ''
+    ''  - always_connect_right_to_left: if True, connectors always go from the right
+    ''    edge of a box to the left of the next one.
+    ''
+    ''  - max_time: limits the calculation time spent on each sheet calculating the
+    ''    references (links) between sheets.
+    ''
+    ''  - sample_every: the calculation of the references (links) between sheets is
+    ''    done on a sample of the cells only. This is used to limit the calculation
+    ''    time spent on each sheet.
+    ''
+    ''  - precedents_file: if specified, the calculation of the references (links)
+    ''    between sheets is overriden, and taken from the file path specified. The
+    ''    input file must be a CSV file with three columns:
+    ''
+    ''      + "sheet_name": each sheet's name;
+    ''      + "sheet_name_precedent": each sheet's reference (link) to previous sheet
+    ''        (eg. as in "Trace precedents"); and
+    ''      + "count": number of references or links found between the two sheets.
+    ''
+    ''    To produce such file:
+    ''      1) Run output_formulae (in this module) on the target workbook;
+    ''      2) Run output_names (in this module) on the target workbook; and
+    ''      3) Run process_formulas.ipynb (jupyter notebook - requires python 3.7+).
 
     Dim i As Long
     Dim t As Integer, oldStatusBar
